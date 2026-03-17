@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>フルーツ合体ゲーム</title>
+<style>
+body{
+    text-align:center;
+    font-family:sans-serif;
+    background:#f2f2f2;
+}
+h1{
+    margin-top:10px;
+}
+canvas{
+    background:#fff;
+    border:3px solid #333;
+}
+</style>
+</head>
+<body>
+
+<h1>フルーツ合体ゲーム</h1>
+<p>クリックしてフルーツを落とそう。同じフルーツがくっつくと進化！</p>
+<canvas id="game" width="400" height="500"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const gravity = 0.3;
+
+const fruits = [
+ {name:"さくらんぼ", r:15, color:"#ff4d4d"},
+ {name:"いちご", r:20, color:"#ff6b6b"},
+ {name:"ぶどう", r:25, color:"#9b59b6"},
+ {name:"みかん", r:30, color:"#f39c12"},
+ {name:"りんご", r:35, color:"#e74c3c"},
+ {name:"メロン", r:40, color:"#2ecc71"},
+ {name:"スイカ", r:50, color:"#27ae60"}
+];
+
+let objects = [];
+
+class Fruit{
+    constructor(type,x,y){
+        this.type = type;
+        this.x = x;
+        this.y = y;
+        this.vy = 0;
+        this.r = fruits[type].r;
+    }
+}
+
+canvas.addEventListener("click",e=>{
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const type = Math.floor(Math.random()*2);
+    objects.push(new Fruit(type,x,20));
+});
+
+function update(){
+
+    objects.forEach(o=>{
+        o.vy += gravity;
+        o.y += o.vy;
+
+        if(o.y + o.r > canvas.height){
+            o.y = canvas.height - o.r;
+            o.vy = 0;
+        }
+    });
+
+    for(let i=0;i<objects.length;i++){
+        for(let j=i+1;j<objects.length;j++){
+
+            let a = objects[i];
+            let b = objects[j];
+
+            let dx = a.x - b.x;
+            let dy = a.y - b.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+
+            if(dist < a.r + b.r){
+
+                if(a.type === b.type && a.type < fruits.length-1){
+                    let nx = (a.x + b.x)/2;
+                    let ny = (a.y + b.y)/2;
+
+                    objects.splice(j,1);
+                    objects.splice(i,1);
+                    objects.push(new Fruit(a.type+1,nx,ny));
+                    return;
+                }else{
+                    let angle = Math.atan2(dy,dx);
+                    let overlap = a.r + b.r - dist;
+
+                    a.x += Math.cos(angle)*overlap/2;
+                    a.y += Math.sin(angle)*overlap/2;
+                    b.x -= Math.cos(angle)*overlap/2;
+                    b.y -= Math.sin(angle)*overlap/2;
+                }
+            }
+        }
+    }
+}
+
+function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    objects.forEach(o=>{
+        ctx.beginPath();
+        ctx.fillStyle = fruits[o.type].color;
+        ctx.arc(o.x,o.y,o.r,0,Math.PI*2);
+        ctx.fill();
+    });
+}
+
+function loop(){
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+
+</body>
+</html>
+
+
+
