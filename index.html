@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>野菜合体ゲーム</title>
+<style>
+  body {
+    margin: 0;
+    background: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: sans-serif;
+  }
+  canvas {
+    background: #fff;
+    border: 2px solid #333;
+  }
+</style>
+</head>
+<body>
+<canvas id="game" width="400" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const gravity = 0.4;
+const vegetables = [];
+
+const vegTypes = [
+  { r: 15, color: "#ff6666", name: "ミニトマト" },
+  { r: 20, color: "#ff9933", name: "にんじん" },
+  { r: 25, color: "#66cc66", name: "ピーマン" },
+  { r: 30, color: "#99cc00", name: "キャベツ" },
+  { r: 35, color: "#339933", name: "スイカ(野菜扱い)" }
+];
+
+class Vegetable {
+  constructor(x, y, typeIndex) {
+    this.x = x;
+    this.y = y;
+    this.vy = 0;
+    this.typeIndex = typeIndex;
+    this.r = vegTypes[typeIndex].r;
+    this.color = vegTypes[typeIndex].color;
+  }
+
+  update() {
+    this.vy += gravity;
+    this.y += this.vy;
+
+    if (this.y + this.r > canvas.height) {
+      this.y = canvas.height - this.r;
+      this.vy = 0;
+    }
+  }
+
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+
+    ctx.fillStyle = "#000";
+    ctx.font = "10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(vegTypes[this.typeIndex].name, this.x, this.y + 3);
+  }
+}
+
+canvas.addEventListener("click", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  vegetables.push(new Vegetable(x, 50, 0));
+});
+
+function checkCollision() {
+  for (let i = 0; i < vegetables.length; i++) {
+    for (let j = i + 1; j < vegetables.length; j++) {
+      const a = vegetables[i];
+      const b = vegetables[j];
+
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < a.r + b.r && a.typeIndex === b.typeIndex) {
+        if (a.typeIndex < vegTypes.length - 1) {
+          const newVeg = new Vegetable(
+            (a.x + b.x) / 2,
+            (a.y + b.y) / 2,
+            a.typeIndex + 1
+          );
+          vegetables.splice(j, 1);
+          vegetables.splice(i, 1);
+          vegetables.push(newVeg);
+          return;
+        }
+      }
+    }
+  }
+}
+
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  vegetables.forEach(v => {
+    v.update();
+    v.draw();
+  });
+
+  checkCollision();
+  requestAnimationFrame(update);
+}
+
+update();
+</script>
+</body>
+</html>
